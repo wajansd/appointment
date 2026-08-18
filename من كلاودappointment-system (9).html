@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mira Clinic — نظام المواعيد</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F7F9F9;
+    --surface:#FFFFFF;
+    --ink:#1C2B28;
+    --muted:#6B7D79;
+    --line:#E1E8E6;
+    --primary:#1B4B43;
+    --primary-ink:#F7F9F9;
+    --accent:#E8B14E;
+    --accent-ink:#2A2107;
+    --danger:#C1502E;
+    --danger-bg:#FBEAE3;
+    --ok-bg:#E9F1EC;
+    --radius:10px;
+    --shadow-sm:0 1px 2px rgba(20,40,36,.05), 0 1px 1px rgba(20,40,36,.04);
+    --shadow-md:0 4px 16px rgba(20,40,36,.07), 0 1px 3px rgba(20,40,36,.05);
+    --shadow-lg:0 12px 32px rgba(20,40,36,.12), 0 2px 6px rgba(20,40,36,.06);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;}
+  html,body{
+    background:
+      radial-gradient(600px 300px at 100% -10%, rgba(232,177,78,.10), transparent 60%),
+      radial-gradient(600px 300px at -10% 10%, rgba(27,75,67,.06), transparent 60%),
+      var(--bg);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    margin:0;
+  }
+  .mono{font-family:'IBM Plex Mono',monospace; letter-spacing:.02em;}
+  ::selection{background:var(--accent); color:var(--accent-ink);}
+
+  @keyframes fadeUp{
+    from{opacity:0; transform:translateY(8px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+  @keyframes popIn{
+    from{opacity:0; transform:scale(.96);}
+    to{opacity:1; transform:scale(1);}
+  }
+  @keyframes pulseRing{
+    0%{box-shadow:0 0 0 0 rgba(232,177,78,.45);}
+    70%{box-shadow:0 0 0 8px rgba(232,177,78,0);}
+    100%{box-shadow:0 0 0 0 rgba(232,177,78,0);}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none !important; transition:none !important;}
+  }
+
+  /* ---- shell ---- */
+  .topbar{
+    position:sticky; top:0; z-index:20;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:16px 28px;
+    border-bottom:1px solid var(--line);
+    background:rgba(255,255,255,.85);
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+  }
+  .brand{display:flex; align-items:center; gap:12px;}
+  .brand-mark{
+    width:38px;height:38px;border-radius:10px;
+    background:linear-gradient(155deg, #21594F 0%, var(--primary) 55%, #123832 100%);
+    display:flex;align-items:center;justify-content:center;
+    color:var(--accent); font-family:'Fraunces',serif; font-weight:700; font-size:19px;
+    box-shadow:var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,.15);
+  }
+  .brand h1{font-size:20px; letter-spacing:-.01em;}
+  .brand span{display:block; font-size:12px; color:var(--muted); font-family:'Inter',sans-serif; font-weight:500;}
+
+  .role-switch{
+    display:flex; background:var(--bg); border:1px solid var(--line);
+    border-radius:999px; padding:3px; gap:2px; box-shadow:inset 0 1px 2px rgba(20,40,36,.05);
+  }
+  .role-switch button{
+    border:none; background:transparent; padding:8px 18px;
+    border-radius:999px; font-family:'Inter',sans-serif; font-weight:600;
+    font-size:13px; color:var(--muted); cursor:pointer; transition:.2s ease;
+  }
+  .role-switch button:hover:not(.active){color:var(--ink);}
+  .role-switch button.active{background:var(--primary); color:var(--primary-ink); box-shadow:var(--shadow-sm);}
+
+  main{max-width:1080px; margin:0 auto; padding:32px 28px 80px;}
+  .view{display:none;}
+  .view.active{display:block; animation:fadeUp .35s ease;}
+
+  .grid{display:grid; grid-template-columns:340px 1fr; gap:24px;}
+  @media (max-width:820px){.grid{grid-template-columns:1fr;}}
+
+  .card{
+    background:var(--surface); border:1px solid var(--line);
+    border-radius:var(--radius); padding:22px;
+    box-shadow:var(--shadow-md);
+  }
+  .card h2{font-size:18px; margin-bottom:4px;}
+  .card .sub{font-size:13px; color:var(--muted); margin-bottom:18px;}
+
+  label{display:block; font-size:12px; font-weight:600; color:var(--muted); margin:14px 0 6px; letter-spacing:.01em;}
+  label:first-of-type{margin-top:0;}
+  input, select, textarea{
+    width:100%; padding:10px 12px; border:1px solid var(--line);
+    border-radius:8px; font-family:'Inter',sans-serif; font-size:14px;
+    background:#fff; color:var(--ink); transition:.15s ease;
+  }
+  input:hover, select:hover, textarea:hover{border-color:#C9D5D2;}
+  input:focus, select:focus, textarea:focus{
+    outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent);
+  }
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center;
+    padding:11px 18px; border-radius:8px; border:none;
+    font-family:'Inter',sans-serif; font-weight:700; font-size:14px;
+    cursor:pointer; transition:.15s ease;
+  }
+  .btn-primary{background:var(--primary); color:var(--primary-ink); width:100%; margin-top:18px; box-shadow:var(--shadow-sm);}
+  .btn-primary:hover{background:#143a34; transform:translateY(-1px); box-shadow:var(--shadow-md);}
+  .btn-primary:active{transform:translateY(0);}
+  .btn-cancel{background:var(--danger-bg); color:var(--danger); padding:7px 12px; font-size:12px;}
+  .btn-cancel:hover:not(:disabled){background:#f4d9cd; transform:translateY(-1px);}
+  .btn-cancel:disabled{opacity:.5; cursor:not-allowed;}
+  .error-msg{
+    background:var(--danger-bg); color:var(--danger); font-size:13px;
+    padding:9px 12px; border-radius:8px; margin-top:12px; display:none;
+    font-weight:600; animation:fadeUp .2s ease;
+  }
+
+  /* ---- day rail (signature element) ---- */
+  .rail-head{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:10px;}
+  .rail-head h2{font-size:18px;}
+  .filter-row{display:flex; gap:10px; align-items:center;}
+  .filter-row input[type=date]{width:auto;}
+  .filter-row select{width:auto;}
+
+  .rail{position:relative; padding-right:64px; margin-top:10px;}
+  .rail::before{
+    content:""; position:absolute; right:52px; top:6px; bottom:6px;
+    width:2px; background:linear-gradient(var(--line), var(--line)) ;
+    background-image:repeating-linear-gradient(to bottom, var(--line) 0 4px, transparent 4px 9px);
+  }
+  .slot{position:relative; min-height:56px; display:flex; align-items:flex-start; margin-bottom:8px; animation:fadeUp .3s ease backwards;}
+  .slot-time{
+    position:absolute; right:-64px; top:8px; width:52px; text-align:right;
+    font-size:12px; color:var(--muted); font-family:'IBM Plex Mono',monospace;
+  }
+  .slot.current .slot-time{color:var(--accent-ink); font-weight:700;}
+  .slot::after{
+    content:""; position:absolute; right:48px; top:10px; width:9px; height:9px;
+    border-radius:50%; background:var(--line); border:2px solid var(--bg); transition:.2s ease;
+  }
+  .slot.has-appt::after{background:var(--accent);}
+  .slot.current::after{background:var(--accent); animation:pulseRing 2s infinite;}
+  .appt-card{
+    flex:1; background:var(--surface); border:1px solid var(--line); border-right:3px solid var(--dept-color, var(--primary));
+    border-radius:8px; padding:12px 14px; margin-left:0;
+    display:flex; justify-content:space-between; align-items:center; gap:10px;
+    width:100%; box-shadow:var(--shadow-sm); transition:.18s ease;
+  }
+  .appt-card:hover{box-shadow:var(--shadow-md); transform:translateY(-1px);}
+  .appt-card.cancelled{opacity:.55; background:#fafafa; box-shadow:none;}
+  .appt-card.cancelled:hover{transform:none;}
+  .appt-left{display:flex; align-items:center; gap:10px;}
+  .avatar{
+    flex-shrink:0; width:34px; height:34px; border-radius:50%;
+    background:var(--dept-color, var(--primary)); color:#fff;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Fraunces',serif; font-weight:600; font-size:13px;
+  }
+  .appt-info{flex:1; min-width:0;}
+  .appt-info b{font-size:14px;}
+  .appt-info .meta{font-size:12px; color:var(--muted); margin-top:2px;}
+  .status-pill{
+    font-size:11px; font-weight:700; padding:3px 9px; border-radius:999px;
+    background:var(--ok-bg); color:var(--primary); white-space:nowrap;
+  }
+  .status-pill.cancelled{background:var(--danger-bg); color:var(--danger);}
+
+  .empty-slot{flex:1; font-size:12px; color:#BFCAC7; padding:14px 2px; border-bottom:1px dashed transparent; transition:.15s;}
+  .slot:hover .empty-slot{color:#93A5A1;}
+
+  /* ---- patient appointment list ---- */
+  .appt-list{display:flex; flex-direction:column; gap:10px; margin-top:10px;}
+  .appt-row{
+    background:var(--surface); border:1px solid var(--line); border-right:3px solid var(--dept-color, var(--primary));
+    border-radius:8px; padding:14px 16px; display:flex; justify-content:space-between; align-items:center; gap:12px;
+    box-shadow:var(--shadow-sm); transition:.18s ease; animation:fadeUp .3s ease backwards;
+  }
+  .appt-row:hover{box-shadow:var(--shadow-md); transform:translateY(-1px);}
+  .appt-row.cancelled{opacity:.55; box-shadow:none;}
+  .appt-row.cancelled:hover{transform:none;}
+  .empty-state{
+    text-align:center; padding:44px 20px; color:var(--muted); font-size:13px;
+  }
+  .empty-state svg{margin-bottom:10px; opacity:.55;}
+
+  /* ---- buttons: edit / ghost ---- */
+  .btn-edit{background:var(--ok-bg); color:var(--primary); padding:7px 12px; font-size:12px;}
+  .btn-edit:hover:not(:disabled){background:#dcece3; transform:translateY(-1px);}
+  .btn-edit:disabled{opacity:.5; cursor:not-allowed;}
+  .btn-ghost{background:var(--surface); border:1px solid var(--line); color:var(--ink); padding:9px 14px; font-size:13px; box-shadow:var(--shadow-sm);}
+  .btn-ghost:hover{border-color:var(--primary); color:var(--primary); transform:translateY(-1px); box-shadow:var(--shadow-md);}
+  .btn-danger-ghost:hover{border-color:var(--danger); color:var(--danger);}
+
+  .staff-tabs{display:flex; gap:4px; background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:3px;}
+  .tab-btn{
+    border:none; background:transparent; padding:9px 16px; border-radius:8px;
+    font-family:'Inter',sans-serif; font-weight:600; font-size:13px; color:var(--muted);
+    cursor:pointer; transition:.18s ease;
+  }
+  .tab-btn:hover:not(.active){color:var(--ink);}
+  .tab-btn.active{background:var(--surface); color:var(--primary); box-shadow:var(--shadow-sm);}
+
+  .restore-btn{background:var(--ok-bg); color:var(--primary);}
+  .staff-note{
+    width:100%; margin-top:8px; font-size:12px; padding:7px 10px; border-radius:6px;
+    border:1px dashed var(--line); background:#FCFDFC; color:var(--ink); resize:none;
+    font-family:'Inter',sans-serif;
+  }
+  .staff-note:focus{border-style:solid;}
+  .staff-note::placeholder{color:#B8C4C1;}
+  .date-badge{
+    font-size:11px; font-family:'IBM Plex Mono',monospace; color:var(--muted);
+    background:var(--bg); border:1px solid var(--line); border-radius:6px; padding:2px 7px; margin-inline-start:6px;
+  }
+
+  .stat-card:nth-child(1){animation-delay:.02s;}
+  .stat-card:nth-child(2){animation-delay:.08s;}
+  .stat-card:nth-child(3){animation-delay:.14s;}
+  .stat-card:nth-child(4){animation-delay:.2s;}
+
+  /* ---- inline edit form (reschedule) ---- */
+  .edit-form{
+    flex:1; display:flex; gap:8px; align-items:center; flex-wrap:wrap;
+  }
+  .edit-form input[type=date], .edit-form select{width:auto; padding:8px 10px; font-size:13px;}
+  .edit-form .edit-actions{display:flex; gap:6px;}
+  .btn-save{background:var(--primary); color:var(--primary-ink); padding:8px 12px; font-size:12px;}
+  .btn-discard{background:var(--bg); color:var(--muted); padding:8px 12px; font-size:12px; border:1px solid var(--line);}
+
+  /* ---- staff stats bar ---- */
+  .stats-bar{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px;}
+  @media (max-width:640px){.stats-bar{grid-template-columns:repeat(2,1fr);}}
+  .stat-card{
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    padding:16px 18px; box-shadow:var(--shadow-sm); transition:.18s ease; animation:popIn .3s ease backwards;
+  }
+  .stat-card:hover{box-shadow:var(--shadow-md); transform:translateY(-2px);}
+  .stat-card .num{font-family:'Fraunces',serif; font-size:28px; font-weight:600; color:var(--primary); line-height:1.1;}
+  .stat-card .lbl{font-size:12px; color:var(--muted); margin-top:4px;}
+  .stat-card.accent{background:linear-gradient(155deg, #FFF9EE, var(--surface));}
+  .stat-card.accent .num{color:var(--accent-ink);}
+
+  .search-wrap{position:relative; flex:1; min-width:160px;}
+  .search-wrap input{padding-left:12px;}
+
+  .toolbar{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:4px;}
+
+  /* ---- toast ---- */
+  #toast{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--primary); color:var(--primary-ink); padding:12px 22px;
+    border-radius:999px; font-size:13px; font-weight:600; box-shadow:var(--shadow-lg);
+    opacity:0; pointer-events:none; transition:.25s ease; z-index:50;
+  }
+  #toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-mark">M</div>
+    <div>
+      <h1>Mira Clinic</h1>
+      <span>نظام المواعيد المصغّر</span>
+    </div>
+  </div>
+  <div class="role-switch">
+    <button id="btn-role-patient" class="active" onclick="setRole('patient')">مريض</button>
+    <button id="btn-role-staff" onclick="setRole('staff')">موظف الاستقبال</button>
+  </div>
+</div>
+
+<main>
+
+  <!-- PATIENT VIEW -->
+  <section id="view-patient" class="view active">
+    <div class="grid">
+      <div class="card">
+        <h2>حجز موعد جديد</h2>
+        <div class="sub">املأ البيانات وسنتحقق من توفر الموعد فورًا.</div>
+
+        <label for="p-name">اسم المريض</label>
+        <input id="p-name" type="text" placeholder="مثال: سارة أحمد">
+
+        <label for="p-dept">القسم</label>
+        <select id="p-dept">
+          <option>عيادة عامة</option>
+          <option>أسنان</option>
+          <option>جلدية</option>
+          <option>أطفال</option>
+          <option>عظام</option>
+        </select>
+
+        <label for="p-date">التاريخ</label>
+        <input id="p-date" type="date">
+
+        <label for="p-time">الوقت</label>
+        <select id="p-time"></select>
+
+        <label for="p-reason">سبب الزيارة (اختياري)</label>
+        <textarea id="p-reason" rows="2" placeholder="وصف مختصر..."></textarea>
+
+        <button class="btn btn-primary" onclick="createAppointment()">تأكيد الحجز</button>
+        <div id="p-error" class="error-msg"></div>
+      </div>
+
+      <div class="card">
+        <h2>مواعيدي</h2>
+        <div class="sub">جميع الحجوزات المرتبطة بالاسم المُدخل أعلاه. يمكنك تعديل الموعد أو إلغاؤه.</div>
+        <div id="p-list" class="appt-list"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STAFF VIEW -->
+  <section id="view-staff" class="view">
+
+    <div class="rail-head" style="margin-bottom:16px;">
+      <div class="staff-tabs">
+        <button id="tab-day" class="tab-btn active" onclick="setStaffTab('day')">جدول اليوم</button>
+        <button id="tab-all" class="tab-btn" onclick="setStaffTab('all')">كل المواعيد</button>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-ghost" onclick="seedDemoData()">بيانات تجريبية</button>
+        <button class="btn btn-ghost btn-danger-ghost" onclick="resetAllData()">حذف الكل</button>
+      </div>
+    </div>
+
+    <div id="s-stats" class="stats-bar"></div>
+
+    <!-- DAY VIEW -->
+    <div id="staff-day-panel" class="card">
+      <div class="toolbar" style="margin-bottom:18px;">
+        <input id="s-date" type="date" onchange="renderStaff()" style="width:auto;">
+        <select id="s-status" onchange="renderStaff()" style="width:auto;">
+          <option value="all">كل الحالات</option>
+          <option value="Confirmed">مؤكدة فقط</option>
+          <option value="Cancelled">ملغاة فقط</option>
+        </select>
+        <div class="search-wrap">
+          <input id="s-search" type="text" placeholder="بحث باسم المريض..." oninput="renderStaff()">
+        </div>
+        <button class="btn btn-ghost" onclick="exportCsv()">تصدير CSV ⬇</button>
+      </div>
+      <div id="s-rail" class="rail"></div>
+    </div>
+
+    <!-- ALL APPOINTMENTS VIEW -->
+    <div id="staff-all-panel" class="card" style="display:none;">
+      <div class="toolbar" style="margin-bottom:18px;">
+        <select id="all-status" style="width:auto;" onchange="renderAllList()">
+          <option value="all">كل الحالات</option>
+          <option value="Confirmed">مؤكدة فقط</option>
+          <option value="Cancelled">ملغاة فقط</option>
+        </select>
+        <div class="search-wrap">
+          <input id="all-search" type="text" placeholder="بحث باسم المريض..." oninput="renderAllList()">
+        </div>
+      </div>
+      <div id="s-all-list" class="appt-list"></div>
+    </div>
+  </section>
+
+</main>
+
+<div id="toast"></div>
+
+<script>
+/* ---------- data layer ---------- */
+const STORE_KEY = 'mira_appointments_v1';
+const START_HOUR = 8, END_HOUR = 17; // 08:00 - 17:00, 30-min slots
+
+function loadAppointments(){
+  try{ return JSON.parse(localStorage.getItem(STORE_KEY)) || []; }
+  catch(e){ return []; }
+}
+function saveAppointments(list){
+  localStorage.setItem(STORE_KEY, JSON.stringify(list));
+}
+function uid(){ return 'a_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+/* ---------- department visual meta ---------- */
+const DEPT_COLORS = {
+  'عيادة عامة': '#1B4B43',
+  'أسنان': '#3E7CB1',
+  'جلدية': '#C15D8B',
+  'أطفال': '#E8B14E',
+  'عظام': '#7A5FB5'
+};
+function deptColor(dept){ return DEPT_COLORS[dept] || 'var(--primary)'; }
+function initials(name){
+  const parts = name.trim().split(/\s+/);
+  const chars = parts.length > 1 ? parts[0][0] + parts[1][0] : parts[0].slice(0,2);
+  return chars.toUpperCase();
+}
+function nowHHMM(){
+  const d = new Date();
+  return String(d.getHours()).padStart(2,'0') + ':' + (d.getMinutes() < 30 ? '00' : '30');
+}
+
+/* ---------- toast ---------- */
+let toastTimer;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* ---------- editing state (reschedule) ---------- */
+let editingId = null;
+
+function timeSlots(){
+  const slots = [];
+  for(let h = START_HOUR; h < END_HOUR; h++){
+    slots.push(String(h).padStart(2,'0') + ':00');
+    slots.push(String(h).padStart(2,'0') + ':30');
+  }
+  return slots;
+}
+
+/* ---------- role switching ---------- */
+let staffTab = 'day';
+function setRole(role){
+  document.getElementById('view-patient').classList.toggle('active', role === 'patient');
+  document.getElementById('view-staff').classList.toggle('active', role === 'staff');
+  document.getElementById('btn-role-patient').classList.toggle('active', role === 'patient');
+  document.getElementById('btn-role-staff').classList.toggle('active', role === 'staff');
+  if(role === 'staff') refreshAll();
+}
+function setStaffTab(tab){
+  staffTab = tab;
+  editingId = null;
+  document.getElementById('tab-day').classList.toggle('active', tab === 'day');
+  document.getElementById('tab-all').classList.toggle('active', tab === 'all');
+  document.getElementById('staff-day-panel').style.display = tab === 'day' ? '' : 'none';
+  document.getElementById('staff-all-panel').style.display = tab === 'all' ? '' : 'none';
+  document.getElementById('s-stats').style.display = tab === 'day' ? '' : 'none';
+  refreshAll();
+}
+function refreshAll(){
+  renderPatientList();
+  if(staffTab === 'day') renderStaff();
+  else renderAllList();
+}
+
+/* ---------- init ---------- */
+function todayStr(){
+  const d = new Date();
+  return d.toISOString().slice(0,10);
+}
+function init(){
+  const timeSel = document.getElementById('p-time');
+  timeSlots().forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t; opt.textContent = t;
+    timeSel.appendChild(opt);
+  });
+  document.getElementById('p-date').value = todayStr();
+  document.getElementById('p-date').min = todayStr();
+  document.getElementById('s-date').value = todayStr();
+  refreshAll();
+}
+
+/* ---------- create ---------- */
+function createAppointment(){
+  const name = document.getElementById('p-name').value.trim();
+  const dept = document.getElementById('p-dept').value;
+  const date = document.getElementById('p-date').value;
+  const time = document.getElementById('p-time').value;
+  const reason = document.getElementById('p-reason').value.trim();
+  const errBox = document.getElementById('p-error');
+  errBox.style.display = 'none';
+
+  if(!name || !date || !time){
+    errBox.textContent = 'الرجاء إدخال الاسم والتاريخ والوقت.';
+    errBox.style.display = 'block';
+    return;
+  }
+
+  if(date < todayStr()){
+    errBox.textContent = 'لا يمكن حجز موعد في تاريخ ماضٍ.';
+    errBox.style.display = 'block';
+    return;
+  }
+
+  const list = loadAppointments();
+  const conflict = list.find(a => a.date === date && a.time === time && a.status !== 'Cancelled');
+  if(conflict){
+    errBox.textContent = 'هذا الموعد محجوز مسبقًا، الرجاء اختيار وقت آخر.';
+    errBox.style.display = 'block';
+    return;
+  }
+
+  const sameDayExisting = list.find(a => a.patientName.toLowerCase() === name.toLowerCase() && a.date === date && a.status !== 'Cancelled');
+  if(sameDayExisting){
+    errBox.textContent = `لديك موعد آخر بنفس اليوم الساعة ${sameDayExisting.time}. يمكنك تعديله بدلًا من حجز موعد إضافي.`;
+    errBox.style.display = 'block';
+    return;
+  }
+
+  list.push({
+    id: uid(),
+    patientName: name,
+    dept, date, time, reason,
+    status: 'Confirmed',
+    createdAt: new Date().toISOString()
+  });
+  saveAppointments(list);
+
+  document.getElementById('p-reason').value = '';
+  refreshAll();
+  showToast('تم تأكيد الحجز ✓');
+}
+
+/* ---------- cancel / restore ---------- */
+function cancelAppointment(id){
+  const list = loadAppointments();
+  const appt = list.find(a => a.id === id);
+  if(!appt || appt.status === 'Cancelled') return;
+  appt.status = 'Cancelled';
+  saveAppointments(list);
+  refreshAll();
+  showToast('تم إلغاء الموعد');
+}
+function restoreAppointment(id){
+  const list = loadAppointments();
+  const appt = list.find(a => a.id === id);
+  if(!appt || appt.status !== 'Cancelled') return;
+  const conflict = list.find(a => a.id !== id && a.date === appt.date && a.time === appt.time && a.status !== 'Cancelled');
+  if(conflict){ showToast('لا يمكن الاستعادة، الموعد أصبح محجوزًا الآن'); return; }
+  appt.status = 'Confirmed';
+  saveAppointments(list);
+  refreshAll();
+  showToast('تمت استعادة الموعد ✓');
+}
+
+/* ---------- staff internal notes ---------- */
+function saveStaffNote(id, value){
+  const list = loadAppointments();
+  const appt = list.find(a => a.id === id);
+  if(!appt) return;
+  appt.staffNote = value;
+  saveAppointments(list);
+  showToast('تم حفظ الملاحظة');
+}
+
+/* ---------- demo data / reset ---------- */
+function seedDemoData(){
+  const list = loadAppointments();
+  const t = todayStr();
+  const demo = [
+    {name:'سارة أحمد', dept:'عيادة عامة', time:'09:00', reason:'فحص دوري'},
+    {name:'محمد العتيبي', dept:'أسنان', time:'10:30', reason:'ألم ضرس'},
+    {name:'نورة الحربي', dept:'جلدية', time:'11:00', reason:''},
+    {name:'خالد القحطاني', dept:'عظام', time:'13:00', reason:'متابعة إصابة'},
+    {name:'ريم السبيعي', dept:'أطفال', time:'14:30', reason:'تطعيم'}
+  ];
+  demo.forEach(d => {
+    if(list.find(a => a.date === t && a.time === d.time && a.status !== 'Cancelled')) return;
+    list.push({id: uid(), patientName: d.name, dept: d.dept, date: t, time: d.time, reason: d.reason, status: 'Confirmed', createdAt: new Date().toISOString()});
+  });
+  saveAppointments(list);
+  document.getElementById('s-date').value = t;
+  refreshAll();
+  showToast('تمت إضافة بيانات تجريبية ✓');
+}
+function resetAllData(){
+  if(!confirm('هل أنت متأكد من حذف جميع المواعيد؟ هذا الإجراء لا يمكن التراجع عنه.')) return;
+  localStorage.removeItem(STORE_KEY);
+  editingId = null;
+  refreshAll();
+  showToast('تم حذف جميع البيانات');
+}
+
+/* ---------- reschedule ---------- */
+function startEdit(id){
+  editingId = id;
+  refreshAll();
+}
+function discardEdit(){
+  editingId = null;
+  refreshAll();
+}
+function saveReschedule(id){
+  const newDate = document.getElementById('edit-date-' + id).value;
+  const newTime = document.getElementById('edit-time-' + id).value;
+  if(!newDate || !newTime){ showToast('الرجاء اختيار تاريخ ووقت'); return; }
+  if(newDate < todayStr()){ showToast('لا يمكن التعديل إلى تاريخ ماضٍ'); return; }
+
+  const list = loadAppointments();
+  const conflict = list.find(a => a.id !== id && a.date === newDate && a.time === newTime && a.status !== 'Cancelled');
+  if(conflict){ showToast('هذا الموعد الجديد محجوز مسبقًا'); return; }
+
+  const appt = list.find(a => a.id === id);
+  appt.date = newDate;
+  appt.time = newTime;
+  saveAppointments(list);
+  editingId = null;
+  refreshAll();
+  showToast('تم تعديل الموعد ✓');
+}
+function editFormHtml(a){
+  const opts = timeSlots().map(t => `<option value="${t}" ${t===a.time?'selected':''}>${t}</option>`).join('');
+  return `
+    <div class="edit-form">
+      <input type="date" id="edit-date-${a.id}" value="${a.date}" min="${todayStr()}">
+      <select id="edit-time-${a.id}">${opts}</select>
+      <div class="edit-actions">
+        <button class="btn btn-save" onclick="saveReschedule('${a.id}')">حفظ</button>
+        <button class="btn btn-discard" onclick="discardEdit()">إلغاء</button>
+      </div>
+    </div>
+  `;
+}
+function staffActionsHtml(a){
+  if(a.status === 'Cancelled'){
+    return `
+      <span class="status-pill cancelled">ملغى</span>
+      <button class="btn btn-edit restore-btn" onclick="restoreAppointment('${a.id}')">استعادة</button>
+    `;
+  }
+  return `
+    <span class="status-pill">مؤكد</span>
+    <button class="btn btn-edit" onclick="startEdit('${a.id}')">تعديل</button>
+    <button class="btn btn-cancel" onclick="cancelAppointment('${a.id}')">إلغاء</button>
+  `;
+}
+function staffNoteHtml(a){
+  return `<textarea class="staff-note" rows="1" placeholder="ملاحظة داخلية (لا يراها المريض)..." onchange="saveStaffNote('${a.id}', this.value)">${escapeHtml(a.staffNote || '')}</textarea>`;
+}
+
+/* ---------- render: patient list ---------- */
+function renderPatientList(){
+  const name = document.getElementById('p-name').value.trim();
+  const box = document.getElementById('p-list');
+  const list = loadAppointments()
+    .filter(a => !name || a.patientName.toLowerCase() === name.toLowerCase())
+    .sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time));
+
+  if(list.length === 0){
+    box.innerHTML = `<div class="empty-state">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 17h.01M12 17h.01"/></svg>
+      <div>${name ? 'لا توجد مواعيد بهذا الاسم بعد.' : 'أدخل اسمك لعرض مواعيدك، أو احجز موعدًا جديدًا.'}</div>
+    </div>`;
+    return;
+  }
+
+  box.innerHTML = list.map((a, i) => {
+    if(editingId === a.id){
+      return `<div class="appt-row" style="animation-delay:${i * 0.04}s">${editFormHtml(a)}</div>`;
+    }
+    return `
+    <div class="appt-row ${a.status === 'Cancelled' ? 'cancelled' : ''}" style="--dept-color:${deptColor(a.dept)}; animation-delay:${i * 0.04}s">
+      <div class="appt-left">
+        <div class="avatar" style="--dept-color:${deptColor(a.dept)}">${initials(a.patientName || a.dept)}</div>
+        <div class="appt-info">
+          <b>${escapeHtml(a.patientName)}</b>
+          <div class="meta">${a.dept}</div>
+          <div class="meta mono">${a.date} · ${a.time}</div>
+          ${a.reason ? `<div class="meta">${escapeHtml(a.reason)}</div>` : ''}
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="status-pill ${a.status === 'Cancelled' ? 'cancelled' : ''}">${a.status === 'Cancelled' ? 'ملغى' : 'مؤكد'}</span>
+        <button class="btn btn-edit" ${a.status === 'Cancelled' ? 'disabled' : ''} onclick="startEdit('${a.id}')">تعديل</button>
+        <button class="btn btn-cancel" ${a.status === 'Cancelled' ? 'disabled' : ''} onclick="cancelAppointment('${a.id}')">إلغاء</button>
+      </div>
+    </div>
+  `;
+  }).join('');
+}
+document.getElementById('p-name').addEventListener('input', renderPatientList);
+
+/* ---------- render: staff day rail ---------- */
+function renderStaff(){
+  const date = document.getElementById('s-date').value || todayStr();
+  const statusFilter = document.getElementById('s-status').value;
+  const search = (document.getElementById('s-search').value || '').trim().toLowerCase();
+  const dayList = loadAppointments().filter(a => a.date === date);
+  const rail = document.getElementById('s-rail');
+
+  renderStats(dayList);
+
+  const list = dayList.filter(a => !search || a.patientName.toLowerCase().includes(search));
+  const isToday = date === todayStr();
+  const currentTime = nowHHMM();
+
+  rail.innerHTML = timeSlots().map((t, i) => {
+    let appts = list.filter(a => a.time === t);
+    if(statusFilter !== 'all') appts = appts.filter(a => a.status === statusFilter);
+    const hasVisible = appts.length > 0;
+    const isCurrent = isToday && t === currentTime;
+
+    const body = hasVisible
+      ? appts.map(a => {
+          if(editingId === a.id) return editFormHtml(a);
+          return `
+          <div class="appt-card ${a.status === 'Cancelled' ? 'cancelled' : ''}" style="--dept-color:${deptColor(a.dept)}">
+            <div class="appt-left">
+              <div class="avatar" style="--dept-color:${deptColor(a.dept)}">${initials(a.patientName)}</div>
+              <div class="appt-info">
+                <b>${escapeHtml(a.patientName)}</b>
+                <div class="meta">${a.dept}${a.reason ? ' · ' + escapeHtml(a.reason) : ''}</div>
+                ${staffNoteHtml(a)}
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+              ${staffActionsHtml(a)}
+            </div>
+          </div>
+        `;
+        }).join('')
+      : `<div class="empty-slot">شاغر</div>`;
+
+    return `
+      <div class="slot ${appts.some(a=>a.status!=='Cancelled') ? 'has-appt' : ''} ${isCurrent ? 'current' : ''}" style="animation-delay:${i * 0.015}s">
+        <div class="slot-time">${t}</div>
+        ${body}
+      </div>
+    `;
+  }).join('');
+}
+
+/* ---------- render: all appointments (across every date) ---------- */
+function renderAllList(){
+  const box = document.getElementById('s-all-list');
+  if(!box) return;
+  const statusFilter = document.getElementById('all-status').value;
+  const search = (document.getElementById('all-search').value || '').trim().toLowerCase();
+
+  let list = loadAppointments();
+  if(statusFilter !== 'all') list = list.filter(a => a.status === statusFilter);
+  if(search) list = list.filter(a => a.patientName.toLowerCase().includes(search));
+  list.sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time));
+
+  if(list.length === 0){
+    box.innerHTML = `<div class="empty-state">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 17h.01M12 17h.01"/></svg>
+      <div>لا توجد مواعيد مطابقة.</div>
+    </div>`;
+    return;
+  }
+
+  box.innerHTML = list.map((a, i) => {
+    if(editingId === a.id){
+      return `<div class="appt-row" style="animation-delay:${i * 0.02}s">${editFormHtml(a)}</div>`;
+    }
+    return `
+    <div class="appt-row ${a.status === 'Cancelled' ? 'cancelled' : ''}" style="--dept-color:${deptColor(a.dept)}; animation-delay:${i * 0.02}s">
+      <div class="appt-left">
+        <div class="avatar" style="--dept-color:${deptColor(a.dept)}">${initials(a.patientName)}</div>
+        <div class="appt-info">
+          <b>${escapeHtml(a.patientName)}</b><span class="date-badge mono">${a.date} · ${a.time}</span>
+          <div class="meta">${a.dept}${a.reason ? ' · ' + escapeHtml(a.reason) : ''}</div>
+          ${staffNoteHtml(a)}
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        ${staffActionsHtml(a)}
+      </div>
+    </div>
+  `;
+  }).join('');
+}
+
+/* ---------- staff stats ---------- */
+function renderStats(dayList){
+  const total = dayList.length;
+  const confirmed = dayList.filter(a => a.status !== 'Cancelled').length;
+  const cancelled = dayList.filter(a => a.status === 'Cancelled').length;
+  const totalSlots = timeSlots().length;
+  const occupancy = totalSlots ? Math.round((confirmed / totalSlots) * 100) : 0;
+
+  document.getElementById('s-stats').innerHTML = `
+    <div class="stat-card"><div class="num">${total}</div><div class="lbl">إجمالي حجوزات اليوم</div></div>
+    <div class="stat-card"><div class="num">${confirmed}</div><div class="lbl">مؤكدة</div></div>
+    <div class="stat-card"><div class="num">${cancelled}</div><div class="lbl">ملغاة</div></div>
+    <div class="stat-card accent"><div class="num">${occupancy}%</div><div class="lbl">نسبة الإشغال</div></div>
+  `;
+}
+
+/* ---------- CSV export ---------- */
+function exportCsv(){
+  const date = document.getElementById('s-date').value || todayStr();
+  const list = loadAppointments().filter(a => a.date === date);
+  if(list.length === 0){ showToast('لا توجد بيانات لهذا اليوم'); return; }
+
+  const header = ['الاسم','القسم','التاريخ','الوقت','الحالة','ملاحظات'];
+  const rows = list.map(a => [a.patientName, a.dept, a.date, a.time, a.status === 'Cancelled' ? 'ملغى' : 'مؤكد', a.reason || '']);
+  const csv = [header, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+
+  const blob = new Blob(['\uFEFF' + csv], {type: 'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `appointments_${date}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+  showToast('تم تصدير الملف ✓');
+}
+
+function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+init();
+</script>
+</body>
+</html>
